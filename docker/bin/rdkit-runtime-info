@@ -1,0 +1,90 @@
+#!/opt/rdkit/bin/python
+import argparse
+import importlib
+import importlib.metadata
+import json
+import os
+import platform
+
+import rdkit
+
+
+def distribution_version(name):
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return "not-installed"
+
+
+def capability(module):
+    try:
+        importlib.import_module(module)
+    except Exception:
+        return "unavailable"
+    return "available"
+
+
+def runtime_data():
+    versions = {
+        "rdkit": rdkit.__version__,
+        "python": platform.python_version(),
+        "numpy": distribution_version("numpy"),
+        "pandas": distribution_version("pandas"),
+        "matplotlib": distribution_version("matplotlib"),
+        "pillow": distribution_version("pillow"),
+        "pycairo": distribution_version("pycairo"),
+        "reportlab": distribution_version("reportlab"),
+        "sqlalchemy": distribution_version("sqlalchemy"),
+    }
+    capabilities = {
+        "avalon": capability("rdkit.Avalon.pyAvalonTools"),
+        "coordgen": capability("rdkit.Chem.rdCoordGen"),
+        "freesasa": capability("rdkit.Chem.rdFreeSASA"),
+        "inchi": capability("rdkit.Chem.inchi"),
+        "pandas-tools": capability("rdkit.Chem.PandasTools"),
+        "sa-score": (
+            "available"
+            if os.path.isfile(
+                os.path.join(
+                    os.environ.get("RDBASE", "/opt/rdkit/share/RDKit"),
+                    "Contrib",
+                    "SA_Score",
+                    "sascorer.py",
+                )
+            )
+            else "unavailable"
+        ),
+    }
+    return versions, capabilities
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Print RDKit runtime versions and packaged capability probes."
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="write one JSON object instead of tab-separated rows",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"rdkit-runtime-info {rdkit.__version__}",
+    )
+    args = parser.parse_args()
+
+    versions, capabilities = runtime_data()
+    if args.json:
+        print(json.dumps({"versions": versions, "capabilities": capabilities}, sort_keys=True))
+        return
+
+    print("kind\tname\tvalue")
+    for name, value in versions.items():
+        print(f"version\t{name}\t{value}")
+    for name, value in capabilities.items():
+        print(f"capability\t{name}\t{value}")
+
+
+if __name__ == "__main__":
+    main()
