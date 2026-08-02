@@ -1,8 +1,8 @@
-rdkit 2026.03.4-r1
+rdkit 2026.03.5-r1
 
 Purpose:
   RDKit is a C++ and Python toolkit for cheminformatics and molecular machine
-  learning. This app provides the RDKit 2026.03.4 Python runtime, shared
+  learning. This app provides the RDKit 2026.03.5 Python runtime, shared
   libraries, runtime data, Contrib files, and drawing dependencies.
 
 Usage:

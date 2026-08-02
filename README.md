@@ -7,13 +7,13 @@ Python toolkit for cheminformatics and molecular machine learning.
 
 - App name: `rdkit`
 - Command: `taf-rdkit`
-- TAFFISH version: `2026.03.4-r1`
+- TAFFISH version: `2026.03.5-r1`
 - App kind: `tool`
-- Container image: `ghcr.io/taffish/rdkit:2026.03.4-r1`
+- Container image: `ghcr.io/taffish/rdkit:2026.03.5-r1`
 - Default command: `python`
 - Python version: `3.12.13`
-- Runtime source: conda-forge `rdkit=2026.03.4`
-- Upstream release: `Release_2026_03_4`
+- Runtime source: conda-forge `main` label, `rdkit=2026.03.5`
+- Upstream release: `Release_2026_03_5`
 - Native platforms: `linux/amd64`, `linux/arm64`
 - Upstream license: `BSD-3-Clause`
 - TAFFISH wrapper license: `Apache-2.0`
@@ -40,12 +40,13 @@ The image includes:
 - upstream README, release notes, license, conda package inventory, and explicit
   package manifest under `/opt/rdkit/share`
 
-The selected conda-forge RDKit package is pinned independently per platform:
+The selected conda-forge `main`-label RDKit package is pinned independently per
+platform:
 
 | Platform | Package build | Package SHA256 |
 | --- | --- | --- |
-| `linux/amd64` | `py312hb6bdafc_0` | `0b6c4914ee1d0486edc687065029f4478d1a209f85138a8aaecdb9e5aab570ad` |
-| `linux/arm64` | `py312hfbf6102_0` | `6cc6d86cf166a1241122aa66970c88966ea4cab68b6e38fbb4e357100c21cef7` |
+| `linux/amd64` | `py312hc61c88d_0` | `abcc0d709514bcc73309ed86ae528d3d8d4a429bd9ce1e740e68dc4d3f7b9fc9` |
+| `linux/arm64` | `py312h6765812_0` | `9bbb6df015de6ddd5b328949e514fcc716bcf158d554cc5e69746117ed7ae47e` |
 
 ## Scope
 
@@ -137,7 +138,7 @@ taf-rdkit python analysis.py
 The app uses the standard thin TAFFISH wrapper:
 
 ```taf
-<taf-app:container:ghcr.io/taffish/rdkit:2026.03.4-r1>
+<taf-app:container:ghcr.io/taffish/rdkit:2026.03.5-r1>
 python ::*ARGV*::
 ```
 
@@ -202,7 +203,7 @@ does not download data or contact remote services during startup or smoke tests.
 ## Platform And Resources
 
 The image has native `linux/amd64` and `linux/arm64` builds. Conda-forge provides
-separate RDKit `2026.03.4` packages for both platforms, and Dockerfile checks run
+separate RDKit `2026.03.5` packages for both platforms, and index smoke runs
 the same API, drawing, 3D, SA_Score, and file-conversion paths on each build.
 
 Small molecule operations are lightweight. Large collections, fingerprint
@@ -216,8 +217,10 @@ reproducible analyses, prefer version-controlled Python scripts.
 ## Image Construction And Size
 
 The image uses conda-forge because RDKit upstream recommends conda and the exact
-`2026.03.4` release is available there for both Linux architectures. The PyPI
-`rdkit` distribution had not yet published `2026.03.4` when this app was created.
+`2026.03.5` release is available from its stable `main` label as separate,
+checksum-pinned packages for both Linux architectures. Keeping one distribution
+source also preserves the validated dependency and runtime-data layout across
+updates.
 
 A multi-stage build keeps micromamba caches and downloaded package archives out
 of the final image. The final runtime removes development headers, CMake metadata,
@@ -229,14 +232,15 @@ manifests remain available for audit.
 
 ## Testing
 
-The build-time and index smoke coverage checks:
+Together, the lightweight build-time checks and independent index smoke cover:
 
-- Python `3.12.13` and RDKit runtime version `2026.03.4`
+- Python `3.12.13` and RDKit runtime version `2026.03.5`
 - imports across the major RDKit Python package families
 - InChI, Avalon, CoordGen, FreeSASA, PandasTools, Cairo drawing, and SA_Score
 - SMILES and SMARTS parsing, canonicalization, descriptors, substructure matching,
   Morgan fingerprints, Tanimoto similarity, and chemical reactions
 - salt/fragment standardization, conformer embedding, UFF optimization, and SASA
+- the `ROMol.SetName()` / `ROMol.GetName()` accessors added in `2026.03.5`
 - SDF write/read round trip, SVG and PNG depiction, pandas SDF loading, and the
   upstream `SDFToCSV` module CLI
 - dynamic-library resolution for the Python executable, RDKit shared libraries,
@@ -281,7 +285,7 @@ is <https://doi.org/10.5281/zenodo.591637>.
 
 - RDKit homepage: <https://www.rdkit.org/>
 - GitHub repository: <https://github.com/rdkit/rdkit>
-- `2026.03.4` release: <https://github.com/rdkit/rdkit/releases/tag/Release_2026_03_4>
+- `2026.03.5` release: <https://github.com/rdkit/rdkit/releases/tag/Release_2026_03_5>
 - Installation guide: <https://www.rdkit.org/docs/Install.html>
 - Getting started in Python: <https://www.rdkit.org/docs/GettingStartedInPython.html>
 - RDKit Book: <https://www.rdkit.org/docs/RDKit_Book.html>

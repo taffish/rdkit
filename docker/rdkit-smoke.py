@@ -38,6 +38,9 @@ def main(output_dir):
         molecules.append(mol)
 
     aspirin, caffeine, ethanol = molecules
+    aspirin.SetName("aspirin")
+    require(aspirin.GetName() == "aspirin", "ROMol name accessors failed")
+    require(Chem.MolFromSmiles("C").GetName() == "", "unnamed ROMol returned a name")
     require(
         Chem.MolToSmiles(aspirin) == "CC(=O)Oc1ccccc1C(=O)O",
         "unexpected aspirin canonical SMILES",
@@ -113,6 +116,7 @@ def main(output_dir):
     summary.write_text(
         "metric\tvalue\n"
         f"rdkit_version\t{rdkit.__version__}\n"
+        "romol_name_accessor\tavailable\n"
         f"molecule_count\t{len(molecules)}\n"
         f"fingerprint_similarity\t{similarity:.6f}\n"
         f"inchi_key\t{inchi_key}\n"

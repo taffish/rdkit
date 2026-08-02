@@ -1,0 +1,49 @@
+[package]
+name = "rdkit"
+kind = "tool"
+version = "2026.03.5"
+release = 1
+license = "Apache-2.0"
+main = "src/main.taf"
+
+[repository]
+url = "https://github.com/taffish/rdkit"
+
+[command]
+name = "taf-rdkit"
+
+[runtime]
+pipe = true
+command_mode = true
+
+[container]
+image = "ghcr.io/taffish/rdkit:2026.03.5-r1"
+dockerfile = "docker/Dockerfile"
+build_platforms = "linux/amd64,linux/arm64"
+
+[meta]
+domain = "bio"
+categories = ["cheminformatics", "molecular-informatics", "molecular-descriptors", "machine-learning"]
+keywords = ["RDKit", "SMILES", "SDF", "molecular fingerprints", "molecular descriptors", "substructure search", "cheminformatics", "molecule drawing"]
+description = "RDKit 2026.03.5 Python cheminformatics runtime with native amd64/arm64 builds, core shared libraries, runtime data, upstream Contrib files, and scientific Python dependencies."
+
+[upstream]
+name = "RDKit"
+type = "github"
+repo = "rdkit/rdkit"
+homepage = "https://www.rdkit.org/"
+release_url = "https://github.com/rdkit/rdkit/releases/tag/Release_2026_03_5"
+downloads = "https://github.com/rdkit/rdkit/archive/refs/tags/Release_2026_03_5.tar.gz; https://anaconda.org/conda-forge/rdkit/files?version=2026.03.5"
+version = "2026.03.5"
+license = "BSD-3-Clause"
+description = "Open-source cheminformatics and machine-learning toolkit written in C++ and Python."
+citation = "RDKit: Open-source cheminformatics. https://www.rdkit.org"
+doi = "10.5281/zenodo.591637"
+watch = "tags"
+strip_prefix = "Release_"
+
+[smoke]
+backend = "docker"
+timeout = 180
+exist = ["python", "python3", "rdkit-runtime-info"]
+test = ["rdkit-runtime-info --json | grep -F '\"rdkit\": \"2026.03.5\"' >/dev/null && rdkit-runtime-info --json | grep -F '\"inchi\": \"available\"' >/dev/null && python -c 'import rdkit; from rdkit import Avalon, Chem, DataManip, Dbase, DistanceGeometry, ForceField, Geometry, ML, Numerics, SimDivFilters, VLib; from rdkit.Chem import AllChem, Draw, PandasTools, inchi, rdCoordGen, rdFreeSASA, rdMolDescriptors; assert rdkit.__version__ == \"2026.03.5\"; print(rdkit.__version__)' | grep -Fx '2026.03.5' >/dev/null", "python --help 2>&1 | grep -F 'usage: python' >/dev/null && python -m rdkit.Chem.ChemUtils.SDFToCSV --help 2>&1 | grep -F 'Convert SDF file to CSV' >/dev/null && rdkit-runtime-info --help 2>&1 | grep -F 'runtime versions' >/dev/null", "tmp=/tmp/taf-rdkit-smoke-$$; rm -rf \"$tmp\"; python /opt/rdkit/share/testdata/rdkit-smoke.py \"$tmp\" && test -s \"$tmp/molecules.sdf\" && test -s \"$tmp/molecule.svg\" && test -s \"$tmp/molecule.png\" && test -s \"$tmp/summary.tsv\" && grep -F 'rdkit_version' \"$tmp/summary.tsv\" | grep -F '2026.03.5' >/dev/null && grep -F 'romol_name_accessor' \"$tmp/summary.tsv\" | grep -F 'available' >/dev/null && python -m rdkit.Chem.ChemUtils.SDFToCSV \"$tmp/molecules.sdf\" \"$tmp/molecules.csv\" && test -s \"$tmp/molecules.csv\" && grep -F 'SMILES' \"$tmp/molecules.csv\" >/dev/null && grep -F 'aspirin' \"$tmp/molecules.csv\" >/dev/null && rm -rf \"$tmp\""]
