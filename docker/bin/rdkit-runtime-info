@@ -24,6 +24,11 @@ def capability(module):
     return "available"
 
 
+def contrib_files(directory, *filenames):
+    root = os.path.join(os.environ.get("RDBASE", "/opt/rdkit/share/RDKit"), "Contrib", directory)
+    return "available" if all(os.path.isfile(os.path.join(root, f)) for f in filenames) else "unavailable"
+
+
 def runtime_data():
     versions = {
         "rdkit": rdkit.__version__,
@@ -42,18 +47,9 @@ def runtime_data():
         "freesasa": capability("rdkit.Chem.rdFreeSASA"),
         "inchi": capability("rdkit.Chem.inchi"),
         "pandas-tools": capability("rdkit.Chem.PandasTools"),
-        "sa-score": (
-            "available"
-            if os.path.isfile(
-                os.path.join(
-                    os.environ.get("RDBASE", "/opt/rdkit/share/RDKit"),
-                    "Contrib",
-                    "SA_Score",
-                    "sascorer.py",
-                )
-            )
-            else "unavailable"
-        ),
+        "synthon-space": capability("rdkit.Chem.rdSynthonSpaceSearch"),
+        "sa-score": contrib_files("SA_Score", "sascorer.py", "fpscores.pkl.gz"),
+        "np-score": contrib_files("NP_Score", "npscorer.py", "publicnp.model.gz"),
     }
     return versions, capabilities
 

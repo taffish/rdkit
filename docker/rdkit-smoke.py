@@ -1,7 +1,10 @@
 #!/opt/rdkit/bin/python
 import os
 import pathlib
-import shutil
+import hashlib
+import io
+import math
+import subprocess
 import sys
 
 import pandas
@@ -12,6 +15,9 @@ from rdkit.Chem import AllChem, Descriptors, PandasTools, inchi, rdFreeSASA
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem.MolStandardize import rdMolStandardize
 from rdkit.Chem import rdFingerprintGenerator
+from rdkit.Chem import rdSynthonSpaceSearch
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
 
 
 def require(condition, message):
@@ -21,9 +27,13 @@ def require(condition, message):
 
 def main(output_dir):
     outdir = pathlib.Path(output_dir)
-    if outdir.exists():
-        shutil.rmtree(outdir)
-    outdir.mkdir(parents=True)
+    # A caller-owned output is never overwritten, even when it is a symlink.
+    outdir.mkdir(parents=True, exist_ok=False)
+    require(rdkit.__version__ == "2026.03.6", "wrong RDKit runtime")
+    print("stage=conda-notices", flush=True)
+    subprocess.run([sys.executable, "/opt/rdkit/share/testdata/conda-licenses.py", "verify"],
+                   check=True)
+    print("stage=core", flush=True)
 
     records = [
         ("aspirin", "CC(=O)Oc1ccccc1C(=O)O"),
@@ -55,6 +65,16 @@ def main(output_dir):
     require(0.0 < similarity < 1.0, "fingerprint similarity is outside the expected range")
     require(pyAvalonTools.GetAvalonFP(aspirin, nBits=512).GetNumBits() == 512, "Avalon failed")
 
+    # New in 2026.03.6: ignoreAtoms must affect the RDKit fingerprint path.
+    path_generator = rdFingerprintGenerator.GetRDKitFPGenerator(
+        numBitsPerFeature=1, minPath=2, maxPath=3
+    )
+    chain = Chem.MolFromSmiles("CCCO")
+    require(len(path_generator.GetSparseCountFingerprint(chain).GetNonzeroElements()) == 3,
+            "RDKit fingerprint baseline failed")
+    require(not path_generator.GetSparseCountFingerprint(chain, ignoreAtoms=[2]).GetNonzeroElements(),
+            "2026.03.6 ignoreAtoms regression")
+
     reaction = AllChem.ReactionFromSmarts("[C:1](=[O:2])O.[N:3]>>[C:1](=[O:2])[N:3]")
     products = reaction.RunReactants((Chem.MolFromSmiles("CC(=O)O"), Chem.MolFromSmiles("CN")))
     require(bool(products), "reaction execution produced no products")
@@ -79,6 +99,7 @@ def main(output_dir):
     require(len(inchi_key) == 27, "InChIKey generation failed")
 
     sdf_path = outdir / "molecules.sdf"
+    print("stage=io-and-drawing", flush=True)
     writer = Chem.SDWriter(str(sdf_path))
     for mol in molecules:
         writer.write(mol)
@@ -104,13 +125,67 @@ def main(output_dir):
     require(png.startswith(b"\x89PNG") and len(png) > 1000, "PNG depiction failed")
     (outdir / "molecule.png").write_bytes(png)
 
+    # MolToFile supports PNG/SVG, not PDF. Compose a PDF with packaged ReportLab.
+    pdf_path = outdir / "molecule.pdf"
+    pdf = canvas.Canvas(str(pdf_path), pagesize=(460, 300))
+    pdf.drawImage(ImageReader(io.BytesIO(png)), 20, 20, width=420, height=260)
+    pdf.save()
+    require(pdf_path.read_bytes().startswith(b"%PDF-"), "ReportLab PDF output failed")
+
+    print("stage=bundled-models", flush=True)
     contrib = pathlib.Path(os.environ.get("RDBASE", "/opt/rdkit/share/RDKit")) / "Contrib" / "SA_Score"
     require((contrib / "sascorer.py").is_file(), "SA_Score Contrib files are missing")
+    require(hashlib.sha256((contrib / "fpscores.pkl.gz").read_bytes()).hexdigest()
+            == "10dcef9340c873e7b987924461b0af5365eb8dd96be607203debe8ddf80c1e73",
+            "bundled SA model identity mismatch")
     sys.path.insert(0, str(contrib))
     import sascorer
 
     sa_score = sascorer.calculateScore(aspirin)
     require(1.0 <= sa_score <= 10.0, "SA score is outside its expected range")
+
+    np_contrib = contrib.parent / "NP_Score"
+    require(hashlib.sha256((np_contrib / "publicnp.model.gz").read_bytes()).hexdigest()
+            == "34db5b02d762e05a0243e640aee24202a5303b7ec810ced7ff929a233e082ab6",
+            "bundled NP model identity mismatch")
+    sys.path.insert(0, str(np_contrib))
+    import npscorer
+
+    np_result = npscorer.scoreMolWConfidence(aspirin, npscorer.readNPModel())
+    require(math.isfinite(np_result.nplikeness) and 0 <= np_result.confidence <= 1,
+            "NP model evaluation failed")
+
+    print("stage=synthon-shapes", flush=True)
+    # Four synthetic building blocks: no external compound library or download.
+    space_path = outdir / "tiny-space.txt"
+    space_path.write_text(
+        "SMILES\tsynton_id\tsynton#\treaction_id\n"
+        "CC(=O)[1*]\ta1\t0\tamide\n"
+        "CCC(=O)[1*]\ta2\t0\tamide\n"
+        "[1*]NC\tb1\t1\tamide\n"
+        "[1*]NCC\tb2\t1\tamide\n", encoding="utf-8")
+    space = rdSynthonSpaceSearch.SynthonSpace()
+    space.ReadTextFile(str(space_path))
+    build = rdSynthonSpaceSearch.ShapeBuildParams()
+    build.numThreads = 1
+    build.numConfs = 3
+    space.BuildSynthonShapes(build)
+    require(space.GetNumReactions() == 1 and space.GetNumProducts() == 4,
+            "tiny synthon space inventory failed")
+    space.WriteDBFile(str(outdir / "tiny-space.spc"))
+    reloaded = rdSynthonSpaceSearch.SynthonSpace()
+    reloaded.ReadDBFile(str(outdir / "tiny-space.spc"))
+    query = Chem.AddHs(Chem.MolFromSmiles("CC(=O)NC"))
+    require(AllChem.EmbedMolecule(query, randomSeed=0xDAC) == 0, "shape query embedding failed")
+    query = Chem.RemoveHs(query)
+    params = rdSynthonSpaceSearch.SynthonSpaceSearchParams()
+    params.numThreads = 1
+    params.numConformers = 3
+    params.randomSeed = 0xDAC
+    params.similarityCutoff = 0.1
+    params.maxHits = 4
+    hits = reloaded.ShapeSearch(query, params).GetHitMolecules()
+    require(bool(hits), "2026.03.6 tiny synthon shape search returned no hits")
 
     summary = outdir / "summary.tsv"
     summary.write_text(
@@ -125,6 +200,8 @@ def main(output_dir):
         encoding="utf-8",
     )
     require(summary.stat().st_size > 0, "summary output is empty")
+    print(f"PASS rdkit={rdkit.__version__} np_score={np_result.nplikeness:.6f} shape_hits={len(hits)}",
+          flush=True)
 
 
 if __name__ == "__main__":
