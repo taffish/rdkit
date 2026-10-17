@@ -1,25 +1,28 @@
+# 来源边界：基础镜像 digest 固定身份，不保证注册表永久保留。
 FROM mambaorg/micromamba:1.5.10-bookworm-slim@sha256:e3797091302382ea841498bc93a7b0a50f7c1448333d5e946d2d1608d0c5f43d AS installed
 
 ARG TARGETARCH
-ARG RDKIT_VERSION=2026.03.6
+ARG RDKIT_VERSION=2026.09.1
 ARG PYTHON_VERSION=3.12.13
 ARG RDKIT_AMD64_BUILD=py312h5eb2359_0
-ARG RDKIT_AMD64_SHA256=0704fd0109b30020c37077d4318dce3db1ded221354d1d0353cb9903c71aba83
-ARG RDKIT_ARM64_BUILD=py312h1a38de7_0
-ARG RDKIT_ARM64_SHA256=72e3601ba0c2816be0b089ee5fb02366256bd9038c92bc7bba7a2d1a4cfa4b51
+ARG RDKIT_AMD64_SHA256=abf4c837c1e6cef61ab469872a644187a6d284f5a6a5c0167736ad1cec86bff1
+ARG RDKIT_ARM64_BUILD=py312hf04553f_0
+ARG RDKIT_ARM64_SHA256=65e92a5bc72abd7499663e5d67087a32e49044c4518afcbb0c50bbe5316c3dd4
 ARG LIBRDKIT_AMD64_BUILD=h61648e3_0
-ARG LIBRDKIT_AMD64_SHA256=d7f25848599806a17e04b9863d47c1a7e1866f5da23cd028c7a1d7cdb77c1d05
+ARG LIBRDKIT_AMD64_SHA256=fb78b6398a4d6ec28f98b2a382185e3e9540384a0a2ff15db6b0f1a742eb8283
 ARG LIBRDKIT_ARM64_BUILD=h4ab84a9_0
-ARG LIBRDKIT_ARM64_SHA256=4bdfbaa39f445b9926987cf32798a3b35f55e879a5d34b91cf24bcba06e227f7
+ARG LIBRDKIT_ARM64_SHA256=2f30bac0ee79098b9bd588fdcaccff758b7439675a84563e67886666ebe210f9
 ARG RDKIT_LICENSE_SHA256=daeb8d194502cbcf34c05c39541a0d02be65bc9bada5b891c1974cd24e9fca30
 ARG RDKIT_README_SHA256=e3f46ec360f5aa3b8000ea36ea84bfc94511d60bcdb508fb3c19cc47a16dd1cd
-ARG RDKIT_RELEASE_NOTES_SHA256=b491883db125b4a12fe24760920126b55b7ddb22fb1e8fa8e102960bbe55093a
+ARG RDKIT_RELEASE_NOTES_SHA256=7d5c160c8f21e25e46dc3455893a996cb9d9e18e95dbfefc3965fac7b06a7c0c
 
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MAMBA_ROOT_PREFIX=/opt/conda
 
+# Debian 在线仓库的候选版本及保留期会变化；失效时先核对仓库事实，
+# 以新的不可变 release 修复，不能将重试当作可复现或永久可下载保证。
 RUN set -eux; \
     for attempt in 1 2 3 4 5; do \
       if apt-get -o Acquire::Retries=3 update \
@@ -44,6 +47,10 @@ USER mambauser
 ENV CONDA_PREFIX=/opt/rdkit
 ENV PATH=/opt/rdkit/bin:${PATH}
 
+# RDKit/librdkit 按架构固定 build + SHA256，Python 固定版本；传递依赖仍由
+# 当前 main repodata 求解，完整解保存在 conda-explicit.txt。归档下架/repodata
+# 漂移应重新核对、验证并推进 release，不能放宽 checksum 或换成未审计的包。
+# 下方官方文本同样以固定 tag + SHA256 验证；URL 可用性不属于身份保证。
 RUN set -eux; \
     case "${TARGETARCH}" in \
       amd64) \
@@ -92,21 +99,21 @@ RUN set -eux; \
     micromamba list -p /opt/rdkit > /opt/rdkit/share/doc/rdkit/conda-packages.txt; \
     micromamba env export -p /opt/rdkit --explicit > /opt/rdkit/share/doc/rdkit/conda-explicit.txt; \
     curl --retry 5 --retry-delay 2 --retry-all-errors -fsSL \
-      "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_03_6/license.txt" \
+      "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_09_1/license.txt" \
       -o /opt/rdkit/share/licenses/rdkit/license.txt; \
     echo "${RDKIT_LICENSE_SHA256}  /opt/rdkit/share/licenses/rdkit/license.txt" | sha256sum -c -; \
     curl --retry 5 --retry-delay 2 --retry-all-errors -fsSL \
-      "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_03_6/README.md" \
+      "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_09_1/README.md" \
       -o /opt/rdkit/share/doc/rdkit/README.md; \
     echo "${RDKIT_README_SHA256}  /opt/rdkit/share/doc/rdkit/README.md" | sha256sum -c -; \
     curl --retry 5 --retry-delay 2 --retry-all-errors -fsSL \
-      "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_03_6/ReleaseNotes.md" \
+      "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_09_1/ReleaseNotes.md" \
       -o /opt/rdkit/share/doc/rdkit/ReleaseNotes.md; \
     echo "${RDKIT_RELEASE_NOTES_SHA256}  /opt/rdkit/share/doc/rdkit/ReleaseNotes.md" | sha256sum -c -; \
     { \
       printf "upstream_repo=https://github.com/rdkit/rdkit\n"; \
-      printf "upstream_tag=Release_2026_03_6\n"; \
-      printf "upstream_commit=0e0d85f4ca34aeae15dfc0f7cf5503bdb0a8e985\n"; \
+      printf "upstream_tag=Release_2026_09_1\n"; \
+      printf "upstream_commit=fece8caa860bdf6c9c82bdb9253f22a0cf87150c\n"; \
       printf "upstream_version=%s\n" "${RDKIT_VERSION}"; \
       printf "runtime_source=conda-forge/label/main::rdkit=%s=%s\n" "${RDKIT_VERSION}" "${rdkit_build}"; \
       printf "runtime_package_subdir=%s\n" "${conda_subdir}"; \
@@ -154,6 +161,7 @@ ENV MPLBACKEND=Agg
 ENV MPLCONFIGDIR=/tmp/matplotlib
 ENV XDG_CACHE_HOME=/tmp/xdg-cache
 
+# 此 final stage 的 APT 仍是在线来源：固定 base digest 不会固定后续仓库解。
 RUN set -eux; \
     for attempt in 1 2 3 4 5; do \
       if apt-get -o Acquire::Retries=3 update \
@@ -176,15 +184,17 @@ COPY --from=builder /opt/rdkit /opt/rdkit
 COPY docker/bin/rdkit-runtime-info /opt/rdkit/bin/rdkit-runtime-info
 COPY docker/rdkit-smoke.py /opt/rdkit/share/testdata/rdkit-smoke.py
 COPY docker/conda-licenses.py /opt/rdkit/share/testdata/conda-licenses.py
+COPY docker/licenses/ /opt/rdkit/share/licenses/rdkit/embedded/
 
 RUN set -eux; \
+    (cd /opt/rdkit/share/licenses/rdkit/embedded && sha256sum -c SHA256SUMS); \
     chmod 0755 /opt/rdkit/bin/rdkit-runtime-info /opt/rdkit/share/testdata/rdkit-smoke.py; \
     python /opt/rdkit/share/testdata/conda-licenses.py verify; \
     python --version 2>&1 | grep -F "Python 3.12.13" >/dev/null; \
-    rdkit-runtime-info --version 2>&1 | grep -Fx "rdkit-runtime-info 2026.03.6" >/dev/null; \
-    rdkit-runtime-info --json | grep -F '"rdkit": "2026.03.6"' >/dev/null; \
+    rdkit-runtime-info --version 2>&1 | grep -Fx "rdkit-runtime-info 2026.09.1" >/dev/null; \
+    rdkit-runtime-info --json | grep -F '"rdkit": "2026.09.1"' >/dev/null; \
     python -m rdkit.Chem.ChemUtils.SDFToCSV --help 2>&1 | grep -F "Convert SDF file to CSV" >/dev/null; \
-    python -c 'import rdkit; from rdkit import Avalon, Chem, DataManip, Dbase, DistanceGeometry, ForceField, Geometry, ML, Numerics, SimDivFilters, VLib; from rdkit.Chem import AllChem, Draw, PandasTools, inchi, rdCoordGen, rdFreeSASA, rdMolDescriptors; assert rdkit.__version__ == "2026.03.6"; mol = Chem.MolFromSmiles("CCO"); mol.SetName("ethanol"); assert mol.GetName() == "ethanol"; print(rdkit.__version__)' | grep -Fx "2026.03.6" >/dev/null; \
+    python -c 'import rdkit; from rdkit import Avalon, Chem, DataManip, Dbase, DistanceGeometry, ForceField, Geometry, ML, Numerics, SimDivFilters, VLib; from rdkit.Chem import AllChem, Draw, PandasTools, inchi, rdCoordGen, rdFreeSASA, rdMolDescriptors; assert rdkit.__version__ == "2026.09.1"; mol = Chem.MolFromSmiles("CCO"); mol.SetName("ethanol"); assert mol.GetName() == "ethanol"; print(rdkit.__version__)' | grep -Fx "2026.09.1" >/dev/null; \
     : > /tmp/rdkit-ldd.txt; \
     ldd "$(command -v python)" >> /tmp/rdkit-ldd.txt 2>&1; \
     find /opt/rdkit/lib -maxdepth 1 -type f -name 'libRDKit*.so*' \

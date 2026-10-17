@@ -29,10 +29,12 @@ def main(output_dir):
     outdir = pathlib.Path(output_dir)
     # A caller-owned output is never overwritten, even when it is a symlink.
     outdir.mkdir(parents=True, exist_ok=False)
-    require(rdkit.__version__ == "2026.03.6", "wrong RDKit runtime")
+    require(rdkit.__version__ == "2026.09.1", "wrong RDKit runtime")
     print("stage=conda-notices", flush=True)
     subprocess.run([sys.executable, "/opt/rdkit/share/testdata/conda-licenses.py", "verify"],
                    check=True)
+    subprocess.run(["sha256sum", "-c", "SHA256SUMS"],
+                   cwd="/opt/rdkit/share/licenses/rdkit/embedded", check=True)
     print("stage=core", flush=True)
 
     records = [
@@ -65,7 +67,7 @@ def main(output_dir):
     require(0.0 < similarity < 1.0, "fingerprint similarity is outside the expected range")
     require(pyAvalonTools.GetAvalonFP(aspirin, nBits=512).GetNumBits() == 512, "Avalon failed")
 
-    # New in 2026.03.6: ignoreAtoms must affect the RDKit fingerprint path.
+    # Retain the earlier ignoreAtoms regression alongside current-release checks.
     path_generator = rdFingerprintGenerator.GetRDKitFPGenerator(
         numBitsPerFeature=1, minPath=2, maxPath=3
     )
@@ -73,7 +75,7 @@ def main(output_dir):
     require(len(path_generator.GetSparseCountFingerprint(chain).GetNonzeroElements()) == 3,
             "RDKit fingerprint baseline failed")
     require(not path_generator.GetSparseCountFingerprint(chain, ignoreAtoms=[2]).GetNonzeroElements(),
-            "2026.03.6 ignoreAtoms regression")
+            "ignoreAtoms regression")
 
     reaction = AllChem.ReactionFromSmarts("[C:1](=[O:2])O.[N:3]>>[C:1](=[O:2])[N:3]")
     products = reaction.RunReactants((Chem.MolFromSmiles("CC(=O)O"), Chem.MolFromSmiles("CN")))
@@ -90,6 +92,19 @@ def main(output_dir):
     )
     AllChem.UFFOptimizeMolecule(ethanol_3d, maxIters=50)
     require(ethanol_3d.GetNumConformers() == 1, "3D conformer is missing")
+    # 2026.09.1 introduces opt-in beta ETKDGv4; do not change upstream defaults.
+    from rdkit.Chem import rdDistGeom
+    v4 = rdDistGeom.ETKDGv4()
+    v4.randomSeed = 0xC0FFEE
+    v4.numThreads = 1
+    v4_mol = Chem.AddHs(Chem.MolFromSmiles("CCCC"))
+    require(rdDistGeom.EmbedMolecule(v4_mol, v4) == 0,
+            "opt-in ETKDGv4 tiny conformer failed")
+    require(v4_mol.GetNumConformers() == 1, "ETKDGv4 conformer missing")
+    # Preserve atom maps when canonical=False and ignoreAtomMapNumbers=True.
+    mapped = Chem.MolFromSmiles("[CH3:7][OH:8]")
+    text = Chem.MolToSmiles(mapped, canonical=False, ignoreAtomMapNumbers=True)
+    require(":7" in text and ":8" in text, "noncanonical SMILES lost atom maps")
     sasa = rdFreeSASA.CalcSASA(ethanol_3d, [1.5] * ethanol_3d.GetNumAtoms())
     require(sasa > 0.0, "FreeSASA calculation failed")
 
@@ -185,7 +200,7 @@ def main(output_dir):
     params.similarityCutoff = 0.1
     params.maxHits = 4
     hits = reloaded.ShapeSearch(query, params).GetHitMolecules()
-    require(bool(hits), "2026.03.6 tiny synthon shape search returned no hits")
+    require(bool(hits), "2026.09.1 tiny synthon shape search returned no hits")
 
     summary = outdir / "summary.tsv"
     summary.write_text(

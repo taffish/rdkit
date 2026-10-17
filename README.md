@@ -5,11 +5,11 @@
 Package identity:
 
 - name / command / kind: `rdkit` / `taf-rdkit` / `tool`
-- version: `2026.03.6-r1`; Python `3.12.13`
-- image: `ghcr.io/taffish/rdkit:2026.03.6-r1`
+- version: `2026.09.1-r1`; Python `3.12.13`
+- image: `ghcr.io/taffish/rdkit:2026.09.1-r1`
 - native platforms: `linux/amd64`, `linux/arm64`
-- upstream: [Release_2026_03_6](https://github.com/rdkit/rdkit/releases/tag/Release_2026_03_6),
-  commit `0e0d85f4ca34aeae15dfc0f7cf5503bdb0a8e985`
+- upstream: [Release_2026_09_1](https://github.com/rdkit/rdkit/releases/tag/Release_2026_09_1),
+  commit `fece8caa860bdf6c9c82bdb9253f22a0cf87150c`
 - packaging license: Apache-2.0; upstream license: BSD-3-Clause
 
 ## What This App Packages
@@ -23,10 +23,10 @@ base OCI manifests are digest-pinned in the Dockerfile.
 
 | Platform | Component/build | SHA256 |
 | --- | --- | --- |
-| amd64 | rdkit `py312h5eb2359_0` | `0704fd0109b30020c37077d4318dce3db1ded221354d1d0353cb9903c71aba83` |
-| arm64 | rdkit `py312h1a38de7_0` | `72e3601ba0c2816be0b089ee5fb02366256bd9038c92bc7bba7a2d1a4cfa4b51` |
-| amd64 | librdkit `h61648e3_0` | `d7f25848599806a17e04b9863d47c1a7e1866f5da23cd028c7a1d7cdb77c1d05` |
-| arm64 | librdkit `h4ab84a9_0` | `4bdfbaa39f445b9926987cf32798a3b35f55e879a5d34b91cf24bcba06e227f7` |
+| amd64 | rdkit `py312h5eb2359_0` | `abf4c837c1e6cef61ab469872a644187a6d284f5a6a5c0167736ad1cec86bff1` |
+| arm64 | rdkit `py312hf04553f_0` | `65e92a5bc72abd7499663e5d67087a32e49044c4518afcbb0c50bbe5316c3dd4` |
+| amd64 | librdkit `h61648e3_0` | `fb78b6398a4d6ec28f98b2a382185e3e9540384a0a2ff15db6b0f1a742eb8283` |
+| arm64 | librdkit `h4ab84a9_0` | `2f30bac0ee79098b9bd588fdcaccff758b7439675a84563e67886666ebe210f9` |
 
 ## Scope
 
@@ -37,13 +37,20 @@ Supported through upstream Python APIs:
 - stereochemistry, 2D coordinates, 3D conformers, force fields and shape operations
 - InChI/InChIKey, Avalon, CoordGen, FreeSASA and PandasTools SDF integration
 - headless SVG/PNG drawing; PDF reports by composing images with ReportLab
-- Synthon space APIs, including the 2026.03.6 shape-search addition
+- Synthon space APIs, including shape search
 - bundled SA_Score and NP_Score models and scoring code
 
 The upstream Contrib tree is retained, but is not dependency-closed. Presence of
 a script or a successful import probe is not proof of all its functionality.
 This app does not supply a GUI, notebook, PostgreSQL cartridge/server, C++ SDK,
 alternate-language distribution or every optional Contrib dependency.
+
+TAFFISH applies no patches to the standard conda-forge distribution and leaves
+its algorithms and defaults unchanged. The 2026.09.1
+release changes symmetric ring finding and atom-map handling; review upstream
+release notes before comparing results across versions. ETKDGv4 is an opt-in beta
+API, not a new default. This package uses the standard Boost.Python bindings,
+not the separate experimental nanobind build.
 
 ## Container Contents
 
@@ -54,13 +61,15 @@ alternate-language distribution or every optional Contrib dependency.
 - `/opt/rdkit/share/doc/rdkit`: source identity, upstream README/release notes,
   `conda-packages.txt` and `conda-explicit.txt`
 - `/opt/rdkit/share/licenses/rdkit/license.txt`: upstream BSD notice
+- `/opt/rdkit/share/licenses/rdkit/embedded`: component notices with source URLs
+  and an offline-verified SHA256 inventory
 - `/opt/rdkit/share/licenses/conda`: per-package dependency notices and a
   name/version/build/source/checksum inventory, verified during build and smoke
 
 ## Usage
 
 After this release is published and indexed, install with
-`taf install rdkit 2026.03.6-r1`. Commands below use the installed `taf-rdkit` alias.
+`taf install rdkit 2026.09.1-r1`. Commands below use the installed `taf-rdkit` alias.
 
 Save as `analysis.py` in the working directory:
 
@@ -152,7 +161,7 @@ fingerprint matrices can exhaust RAM/storage; no scientific thresholds are impos
 
 ### Read-only Synthon binary libraries
 
-Upstream 2026.03.6 opens `.spc` files with `O_RDWR` in its Linux memory-mapped
+Upstream 2026.09.1 opens `.spc` files with `O_RDWR` in its Linux memory-mapped
 reader, even though the mapping is read-only. Direct `ReadDBFile()` on a read-only
 bind or a non-writable shared file is therefore unsupported. This is a file-access
 limitation, not an algorithm change, and TAFFISH does not patch it. Keep the master
@@ -253,7 +262,8 @@ Independent manifest commands cover identity/help and a minimal real path:
 parsing, SMARTS, descriptors, Morgan/Avalon fingerprints, reactions,
 standardization, conformers/UFF/FreeSASA, InChI, SDF/pandas/CSV, SVG/PNG/PDF,
 SA/NP scores, RDKit fingerprint `ignoreAtoms`, and tiny Synthon shape database
-build/reload/search. Fresh scratch is owned by each command; existing output
+build/reload/search, plus opt-in ETKDGv4 and noncanonical atom-map retention.
+Fresh scratch is owned by each command; existing output
 directories are not overwritten.
 
 Current-release native-platform, backend, read-only-root, real SIF and actual

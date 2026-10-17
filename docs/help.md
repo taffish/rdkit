@@ -1,4 +1,4 @@
-rdkit 2026.03.6-r1
+rdkit 2026.09.1-r1
 
 Purpose:
   Run Python scripts for molecular structures, descriptors, fingerprints,
@@ -14,6 +14,7 @@ Required inputs:
   directory. Select output paths in your script and avoid existing filenames.
   Use explicit python: taf-rdkit analysis.py treats analysis.py as an executable.
   Keep non-trivial Python in a file, not a shell-rich inline python -c string.
+  Space-containing path: taf-rdkit python "'my script.py'"
 
 Common options:
   taf-rdkit python --help
