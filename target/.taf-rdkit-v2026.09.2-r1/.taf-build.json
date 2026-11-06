@@ -1,0 +1,6 @@
+{
+  "artifact": "taf-rdkit-v2026.09.2-r1",
+  "schema": "taffish.build/v1",
+  "source_sha256": "a2ce452c4693187ff6165d7c5727d13c124199955c7b1cc52bfc9b9029b9c251",
+  "wrapper_sha256": "388312b2552d9b5af86fd1fcac57f171ca45a5e202679dc77d7dbf69dc313d16"
+}

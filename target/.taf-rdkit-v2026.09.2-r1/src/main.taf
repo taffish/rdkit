@@ -1,0 +1,2 @@
+<taf-app:container:ghcr.io/taffish/rdkit:2026.09.2-r1>
+python ::*ARGV*::

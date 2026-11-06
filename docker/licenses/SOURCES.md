@@ -1,8 +1,10 @@
 # RDKit embedded-component notices
 
 These texts supplement the primary RDKit license and Conda dependency notices.
-Versions follow the 2026.09.1 CMake sources and conda-forge recipe commit
-73426f472d94ac376e3c2ee321c70c100fe196cb. No runtime code is changed.
+Versions follow the official 2026.09.2 CMake sources. Original notices from all
+checksum-pinned source archives (including ChemDraw, better-enums and fonts) are
+also preserved under ../source with an integrity inventory. No upstream algorithm
+is changed.
 
 | File | Original source |
 | --- | --- |
@@ -14,7 +16,7 @@ Versions follow the 2026.09.1 CMake sources and conda-forge recipe commit
 | YAeHMOP.txt | https://raw.githubusercontent.com/greglandrum/yaehmop/4ded45bb2bb7a2d38d2527c991debce9226a9066/license.txt (2025.03.2) |
 | PubChemAlign3D.txt | https://raw.githubusercontent.com/ncbi/pubchem-align3d/daefab3dd0c90ca56da9d3d5e375fe4d651e6be3/LICENSE |
 | InChI.txt | https://raw.githubusercontent.com/IUPAC-InChI/InChI/0b3e941d29289f3e5024c9ecfd45186285319420/LICENSE (1.07.3) |
-| ChemReactions.txt | https://raw.githubusercontent.com/rdkit/rdkit/fece8caa860bdf6c9c82bdb9253f22a0cf87150c/Code/GraphMol/ChemReactions/license.txt |
+| ChemReactions.txt | https://raw.githubusercontent.com/rdkit/rdkit/f86b7dc9b31e2531200bbd1f54589bcbd968bb05/Code/GraphMol/ChemReactions/license.txt |
 
 SHA256SUMS binds the shipped files and is checked offline during construction
 and functional smoke. This is provenance/preservation evidence, not a legal

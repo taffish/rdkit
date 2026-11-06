@@ -147,7 +147,7 @@ def verify(root):
     require(packages and len({p['name'] for p in packages}) == len(packages),
             'missing or duplicate package inventory')
     names = {p['name'] for p in packages}
-    require({'rdkit', 'librdkit', 'python', 'cairo', 'pycairo', 'libharfbuzz'} <= names,
+    require({'libboost', 'libboost-python', 'python', 'cairo', 'pycairo', 'libharfbuzz'} <= names,
             'critical runtime package missing from notice inventory')
     checked = set()
     by_name = {p['name']: p for p in packages}

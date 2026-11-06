@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "upstream_commit": "f86b7dc9b31e2531200bbd1f54589bcbd968bb05",
+  "sources": [
+    {
+      "name": "rdkit",
+      "url": "https://github.com/rdkit/rdkit/archive/refs/tags/Release_2026_09_2.tar.gz",
+      "sha256": "42650cd497f4cb8273c935d75f4b48db6da7b9ddad16a0cb2a46271f509c9760",
+      "destination": "rdkit",
+      "format": "tar"
+    },
+    {
+      "name": "ring",
+      "url": "https://github.com/rareylab/RingDecomposerLib/archive/v1.1.3_rdkit.tar.gz",
+      "sha256": "944b5816712a48bbf88aa25d4300ce11871ddf6e971218eac08f90ed2192f715",
+      "destination": "rdkit/External/RingFamilies/RingDecomposerLib",
+      "format": "tar"
+    },
+    {
+      "name": "coordgen",
+      "url": "https://github.com/schrodinger/coordgenlibs/archive/v3.0.2.tar.gz",
+      "sha256": "f67697434f7fec03bca150a6d84ea0e8409f6ec49d5aab43badc5833098ff4e3",
+      "destination": "rdkit/External/CoordGen/coordgen",
+      "format": "tar"
+    },
+    {
+      "name": "maeparser",
+      "url": "https://github.com/schrodinger/maeparser/archive/v1.3.3.tar.gz",
+      "sha256": "78e7571a779ea4952e752ecef57c62fb26463947e29ef7f4b31b11988d88ca07",
+      "destination": "rdkit/External/CoordGen/maeparser",
+      "format": "tar"
+    },
+    {
+      "name": "freesasa",
+      "url": "https://github.com/mittinatten/freesasa/releases/download/2.0.3/freesasa-2.0.3.tar.gz",
+      "sha256": "ba1d4f7e9dd51ae2452b5c3a80ac34039d51da4826dae1dbe173cd7a1d6aca94",
+      "destination": "rdkit/External/FreeSASA/freesasa-2.0.3",
+      "format": "tar"
+    },
+    {
+      "name": "avalon",
+      "url": "https://github.com/rdkit/ava-formake/archive/refs/tags/AvalonToolkit_2.0.5-pre.3.tar.gz",
+      "sha256": "a553cc9e04c2485891a2e215e309b71db62161b4cb2bff8efbb074c72441c487",
+      "destination": "rdkit/External/AvalonTools/ava-formake-AvalonToolkit_2.0.5-pre.3",
+      "format": "tar"
+    },
+    {
+      "name": "yaehmop",
+      "url": "https://github.com/greglandrum/yaehmop/archive/refs/tags/v2025.03.2.tar.gz",
+      "sha256": "b55481bea135a9dc2da5f0f32535a25195e8e74414af480d04edb8ce9959efe9",
+      "destination": "rdkit/External/YAeHMOP/yaehmop",
+      "format": "tar"
+    },
+    {
+      "name": "pubchem",
+      "url": "https://github.com/ncbi/pubchem-align3d/archive/daefab3.tar.gz",
+      "sha256": "4871a08104c660890015f27d32a0147fc32df69a8962ca5cd1fe54ef6319c779",
+      "destination": "rdkit/External/pubchem_shape/pubchem-align3d",
+      "format": "tar"
+    },
+    {
+      "name": "inchi",
+      "url": "https://github.com/IUPAC-InChI/InChI/releases/download/v1.07.3/INCHI-1-SRC.zip",
+      "sha256": "b42d828b5d645bd60bc43df7e0516215808d92e5a46c28e12b1f4f75dfaae333",
+      "destination": "rdkit/External/INCHI-API/src",
+      "format": "zip"
+    },
+    {
+      "name": "chemdraw",
+      "url": "https://codeload.github.com/Glysade/chemdraw/tar.gz/refs/tags/v1.0.14",
+      "sha256": "bedd75643b9bfaee1663fc41814370ac9329c8d0934e970179929cb355a82aff",
+      "destination": "rdkit/External/ChemDraw/chemdraw",
+      "format": "tar"
+    },
+    {
+      "name": "better-enums",
+      "url": "https://github.com/aantron/better-enums/archive/c35576bed0295689540b39873126129adfa0b4c8.tar.gz",
+      "sha256": "9b78dcef7f88d1345b6f25335bfbcba5f024b08990c7d6dc605b833f4128b8dd",
+      "destination": "better-enums",
+      "format": "tar"
+    },
+    {
+      "name": "comic-font",
+      "url": "https://raw.githubusercontent.com/google/fonts/23bf052eb5d01205102d72cba29580df2a38c422/ofl/comicneue/ComicNeue-Regular.ttf",
+      "sha256": "a0ee5a37c8b27c4db0700137d928598b1e23b0089e1546a8961909176b779360",
+      "destination": "rdkit/Data/Fonts/ComicNeue-Regular.ttf",
+      "format": "file"
+    },
+    {
+      "name": "comic-font-license",
+      "url": "https://raw.githubusercontent.com/google/fonts/23bf052eb5d01205102d72cba29580df2a38c422/ofl/comicneue/OFL.txt",
+      "sha256": "7c38a22e5878e60fe423360553e63dd7be23d29f1f60336034935dbfc96e8320",
+      "destination": "rdkit/Data/Fonts/OFL.txt",
+      "format": "file"
+    }
+  ]
+}

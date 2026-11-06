@@ -1,4 +1,4 @@
-rdkit 2026.09.1-r1
+rdkit 2026.09.2-r1
 
 Purpose:
   Run Python scripts for molecular structures, descriptors, fingerprints,
@@ -52,7 +52,7 @@ Read-only inputs outside the working directory:
     taf-rdkit python analysis.py
 
 Bundled scoring models:
-  In analysis.py, use the Conda Contrib path (not rdkit.Contrib):
+  In analysis.py, use the packaged Contrib path (not rdkit.Contrib):
     import os, sys
     from rdkit import RDConfig
     sys.path.insert(0, os.path.join(RDConfig.RDContribDir, "SA_Score"))

@@ -19,7 +19,7 @@ class NoticeTests(unittest.TestCase):
         root = Path(self.temp.name)
         self.prefix, self.cache, self.output = root/'env', root/'pkgs', root/'notices'
         (self.prefix/'conda-meta').mkdir(parents=True)
-        for name in ['rdkit', 'librdkit', 'python', 'cairo', 'pycairo', 'libharfbuzz']:
+        for name in ['libboost', 'libboost-python', 'python', 'cairo', 'pycairo', 'libharfbuzz']:
             self.add_package(name, ['lib/'+name], True)
         self.add_package('metadata', [], False)
 

@@ -7,6 +7,7 @@ import math
 import subprocess
 import sys
 
+import numpy
 import pandas
 import rdkit
 from rdkit import Chem, DataStructs
@@ -14,7 +15,7 @@ from rdkit.Avalon import pyAvalonTools
 from rdkit.Chem import AllChem, Descriptors, PandasTools, inchi, rdFreeSASA
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem.MolStandardize import rdMolStandardize
-from rdkit.Chem import rdFingerprintGenerator
+from rdkit.Chem import rdFingerprintGenerator, rdMolDescriptors
 from rdkit.Chem import rdSynthonSpaceSearch
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
@@ -29,12 +30,14 @@ def main(output_dir):
     outdir = pathlib.Path(output_dir)
     # A caller-owned output is never overwritten, even when it is a symlink.
     outdir.mkdir(parents=True, exist_ok=False)
-    require(rdkit.__version__ == "2026.09.1", "wrong RDKit runtime")
+    require(rdkit.__version__ == "2026.09.2", "wrong RDKit runtime")
     print("stage=conda-notices", flush=True)
     subprocess.run([sys.executable, "/opt/rdkit/share/testdata/conda-licenses.py", "verify"],
                    check=True)
     subprocess.run(["sha256sum", "-c", "SHA256SUMS"],
                    cwd="/opt/rdkit/share/licenses/rdkit/embedded", check=True)
+    subprocess.run([sys.executable, "/opt/rdkit/share/testdata/prepare-sources.py", "verify",
+                    "/opt/rdkit/share/licenses/rdkit/source"], check=True)
     print("stage=core", flush=True)
 
     records = [
@@ -66,6 +69,18 @@ def main(output_dir):
     similarity = DataStructs.TanimotoSimilarity(aspirin_fp, caffeine_fp)
     require(0.0 < similarity < 1.0, "fingerprint similarity is outside the expected range")
     require(pyAvalonTools.GetAvalonFP(aspirin, nBits=512).GetNumBits() == 512, "Avalon failed")
+    require(aspirin_fp.ToBitString() == DataStructs.BitVectToText(aspirin_fp),
+            "2026.09.2 ToBitString binding failed")
+    properties = rdMolDescriptors.Properties(['exactmw', 'tpsa', 'NumHBA'])
+    reference = numpy.array([list(properties.ComputeProperties(mol)) for mol in molecules])
+    for threads in (1, 2):
+        batch = properties.ComputeProperties(molecules, numThreads=threads)
+        require(batch.shape == (3, 3) and numpy.allclose(batch, reference),
+                "2026.09.2 batch property calculation failed")
+    ring_query = Chem.MolFromSmarts('*@{2}*')
+    require(ring_query is not None and
+            len(Chem.MolFromSmiles('c1ccc2ccccc2c1').GetSubstructMatches(ring_query)) == 1,
+            "2026.09.2 SMARTS bond ring-count matching failed")
 
     # Retain the earlier ignoreAtoms regression alongside current-release checks.
     path_generator = rdFingerprintGenerator.GetRDKitFPGenerator(
@@ -92,7 +107,7 @@ def main(output_dir):
     )
     AllChem.UFFOptimizeMolecule(ethanol_3d, maxIters=50)
     require(ethanol_3d.GetNumConformers() == 1, "3D conformer is missing")
-    # 2026.09.1 introduces opt-in beta ETKDGv4; do not change upstream defaults.
+    # Preserve opt-in beta ETKDGv4 introduced in 2026.09.1; keep upstream defaults.
     from rdkit.Chem import rdDistGeom
     v4 = rdDistGeom.ETKDGv4()
     v4.randomSeed = 0xC0FFEE
@@ -200,7 +215,7 @@ def main(output_dir):
     params.similarityCutoff = 0.1
     params.maxHits = 4
     hits = reloaded.ShapeSearch(query, params).GetHitMolecules()
-    require(bool(hits), "2026.09.1 tiny synthon shape search returned no hits")
+    require(bool(hits), "2026.09.2 tiny synthon shape search returned no hits")
 
     summary = outdir / "summary.tsv"
     summary.write_text(

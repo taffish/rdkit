@@ -5,11 +5,11 @@
 Package identity:
 
 - name / command / kind: `rdkit` / `taf-rdkit` / `tool`
-- version: `2026.09.1-r1`; Python `3.12.13`
-- image: `ghcr.io/taffish/rdkit:2026.09.1-r1`
+- version: `2026.09.2-r1`; Python `3.12.13`
+- image: `ghcr.io/taffish/rdkit:2026.09.2-r1`
 - native platforms: `linux/amd64`, `linux/arm64`
-- upstream: [Release_2026_09_1](https://github.com/rdkit/rdkit/releases/tag/Release_2026_09_1),
-  commit `fece8caa860bdf6c9c82bdb9253f22a0cf87150c`
+- upstream: [Release_2026_09_2](https://github.com/rdkit/rdkit/releases/tag/Release_2026_09_2),
+  commit `f86b7dc9b31e2531200bbd1f54589bcbd968bb05`
 - packaging license: Apache-2.0; upstream license: BSD-3-Clause
 
 ## What This App Packages
@@ -18,15 +18,18 @@ RDKit is primarily a C++/Python library, not a single `rdkit` CLI. This app
 provides its Python runtime and required shared libraries, without inventing a
 replacement analysis interface. The default command remains `python`.
 
-Stable conda-forge `main` packages are independently fixed and SHA256-checked;
-base OCI manifests are digest-pinned in the Dockerfile.
+Both native platforms compile the same official, unmodified RDKit source.
+The source archive SHA256 is
+`42650cd497f4cb8273c935d75f4b48db6da7b9ddad16a0cb2a46271f509c9760`.
+Conda supplies dependencies only; an older RDKit binary is not overlaid.
 
-| Platform | Component/build | SHA256 |
-| --- | --- | --- |
-| amd64 | rdkit `py312h5eb2359_0` | `abf4c837c1e6cef61ab469872a644187a6d284f5a6a5c0167736ad1cec86bff1` |
-| arm64 | rdkit `py312hf04553f_0` | `65e92a5bc72abd7499663e5d67087a32e49044c4518afcbb0c50bbe5316c3dd4` |
-| amd64 | librdkit `h61648e3_0` | `fb78b6398a4d6ec28f98b2a382185e3e9540384a0a2ff15db6b0f1a742eb8283` |
-| arm64 | librdkit `h4ab84a9_0` | `2f30bac0ee79098b9bd588fdcaccff758b7439675a84563e67886666ebe210f9` |
+[Source manifest](docker/sources.json) fixes all 13 fetched inputs: RDKit,
+RingDecomposerLib, CoordGen, MaeParser, FreeSASA, Avalon, YAeHMOP, PubChemAlign3D,
+InChI, ChemDraw, better-enums and the Comic Neue font/license. Each is SHA256-checked
+before extraction. CMake then configures and compiles without network access.
+The build preparation replays RDKit's own FreeSASA file copy and MAE export-header
+function for pre-extracted sources; it does not introduce a scientific patch.
+Base OCI manifests are digest-pinned in the Dockerfile.
 
 ## Scope
 
@@ -45,10 +48,10 @@ a script or a successful import probe is not proof of all its functionality.
 This app does not supply a GUI, notebook, PostgreSQL cartridge/server, C++ SDK,
 alternate-language distribution or every optional Contrib dependency.
 
-TAFFISH applies no patches to the standard conda-forge distribution and leaves
-its algorithms and defaults unchanged. The 2026.09.1
-release changes symmetric ring finding and atom-map handling; review upstream
-release notes before comparing results across versions. ETKDGv4 is an opt-in beta
+TAFFISH does not change RDKit algorithms or defaults. The 2026.09.2 release
+adds batch property calculation and bit-vector bindings, and fixes parsing,
+depiction and Synthon-search behavior; review upstream release notes before
+comparing scientific outputs across versions. ETKDGv4 remains an opt-in beta
 API, not a new default. This package uses the standard Boost.Python bindings,
 not the separate experimental nanobind build.
 
@@ -59,17 +62,19 @@ not the separate experimental nanobind build.
 - NumPy, pandas, matplotlib, Pillow, Cairo, ReportLab and SQLAlchemy
 - `/opt/rdkit/share/RDKit`: data, fonts, feature definitions and Contrib
 - `/opt/rdkit/share/doc/rdkit`: source identity, upstream README/release notes,
-  `conda-packages.txt` and `conda-explicit.txt`
+  `sources.json`, `CMakeCache.txt`, `conda-packages.txt` and `conda-explicit.txt`
 - `/opt/rdkit/share/licenses/rdkit/license.txt`: upstream BSD notice
 - `/opt/rdkit/share/licenses/rdkit/embedded`: component notices with source URLs
   and an offline-verified SHA256 inventory
+- `/opt/rdkit/share/licenses/rdkit/source`: original source-archive notices and
+  a checked URL/SHA256 provenance inventory
 - `/opt/rdkit/share/licenses/conda`: per-package dependency notices and a
   name/version/build/source/checksum inventory, verified during build and smoke
 
 ## Usage
 
 After this release is published and indexed, install with
-`taf install rdkit 2026.09.1-r1`. Commands below use the installed `taf-rdkit` alias.
+`taf install rdkit 2026.09.2-r1`. Commands below use the installed `taf-rdkit` alias.
 
 Save as `analysis.py` in the working directory:
 
@@ -92,7 +97,7 @@ Draw.MolToFile(mol, "molecule.svg")
 Draw.MolToFile(mol, "molecule.png")
 ```
 
-Conda installs Contrib under `RDConfig.RDContribDir`, not `rdkit.Contrib`.
+This source build installs Contrib under `RDConfig.RDContribDir`, not `rdkit.Contrib`.
 
 ```sh
 taf-rdkit python analysis.py
@@ -161,7 +166,7 @@ fingerprint matrices can exhaust RAM/storage; no scientific thresholds are impos
 
 ### Read-only Synthon binary libraries
 
-Upstream 2026.09.1 opens `.spc` files with `O_RDWR` in its Linux memory-mapped
+Upstream 2026.09.2 opens `.spc` files with `O_RDWR` in its Linux memory-mapped
 reader, even though the mapping is read-only. Direct `ReadDBFile()` on a read-only
 bind or a non-writable shared file is therefore unsupported. This is a file-access
 limitation, not an algorithm change, and TAFFISH does not patch it. Keep the master
@@ -198,7 +203,7 @@ master, remove the `:ro` bind, or add write permissions for other users.
 
 SA SHA256: `10dcef9340c873e7b987924461b0af5365eb8dd96be607203debe8ddf80c1e73`.
 NP SHA256: `34db5b02d762e05a0243e640aee24202a5303b7ec810ced7ff929a233e082ab6`.
-Both are bound to the verified package and tested offline. Upstream code/notices
+Both are bound to the verified source archive and tested offline. Upstream code/notices
 remain in their Contrib directories; see the SA 2009 J. Cheminformatics and NP
 2008 JCIM references in their READMEs.
 
@@ -221,7 +226,7 @@ This remains an explicitly **headless Python runtime**:
 | `IPythonConsole`, `InteractiveRenderer`, py3Dmol | Needs notebook/browser; interactive renderer loads external CDN JavaScript | Separate authenticated notebook with pinned assets |
 | Official KNIME nodes | Plugins for a separately installed KNIME Analytics Platform | [KNIME integration](https://github.com/rdkit/knime-rdkit) |
 | Official JS renderer | Separate JavaScript/WebAssembly browser package | [Structure renderer](https://github.com/rdkit/rdkit-structure-renderer) |
-| PostgreSQL cartridge, other language wrappers, C++ SDK | Separate server/build interfaces; cartridge recipe excludes aarch64 | Purpose-built server/development app |
+| PostgreSQL cartridge, other language wrappers, C++ SDK | Separate server/build interfaces not included in this runtime | Purpose-built server/development app |
 | Other Contrib/legacy bridges | May need SciPy, scikit-learn, seaborn, IPython, requests, xlsxwriter, CACTVS or bayon | Dependency-closed environment for the chosen script |
 
 No desktop/service launcher, listening port or notebook entry is exposed. This
@@ -239,8 +244,17 @@ retained instead of deleting its whole tree. Offline checks verify every archive
 notice's size and SHA256; packages without payload are identified separately.
 Split FreeType notices are traced to the matching installed provider; GCC runtime
 exceptions and the GPL-3 text, and SQLite's original header dedication, are retained.
-RDKit/library/Python identities are fixed; other Conda dependencies are resolved
-and recorded in the explicit manifest. Later builds are not claimed byte-identical.
+RDKit source, external source inputs, Python and Boost versions are fixed;
+other Conda dependencies and APT packages use live repositories. Each image
+records the solved Conda environment and actual CMake configuration. Later builds are not claimed byte-identical.
+
+The locally validated 2026.09.2-r1 candidate is 722,208,929 bytes (688.75 MiB)
+on amd64 and 680,199,334 bytes (648.69 MiB) on arm64, measured with Docker image
+inspect. The ARM64 `/opt/rdkit` runtime occupies about 581 MiB, including 411 MiB
+of libraries/Python packages and 94 MiB of upstream RDKit data/Contrib. Runtime
+dependencies and original data/notices are retained; source/build caches, headers
+and static libraries are not shipped. These are local-candidate measurements,
+not a claim about a future rebuilt public image.
 
 ## Troubleshooting
 
@@ -254,15 +268,16 @@ and recorded in the explicit manifest. Later builds are not claimed byte-identic
 
 ## Testing
 
-Build-time checks are lightweight: versions, ordinary help, imports, ROMol name
-accessors (introduced in 2026.03.5) and dynamic-library resolution. Full 3D,
+Build-time checks are lightweight: Python/RDKit versions, core imports, notice
+integrity and dynamic-library resolution. Full 3D,
 drawing and scoring stay in offline runtime smoke, not Docker build layers.
 
 Independent manifest commands cover identity/help and a minimal real path:
 parsing, SMARTS, descriptors, Morgan/Avalon fingerprints, reactions,
 standardization, conformers/UFF/FreeSASA, InChI, SDF/pandas/CSV, SVG/PNG/PDF,
 SA/NP scores, RDKit fingerprint `ignoreAtoms`, and tiny Synthon shape database
-build/reload/search, plus opt-in ETKDGv4 and noncanonical atom-map retention.
+build/reload/search, plus opt-in ETKDGv4, noncanonical atom-map retention and
+2026.09.2 bit-vector bindings, batch property calculation and SMARTS bond ring counts.
 Fresh scratch is owned by each command; existing output
 directories are not overwritten.
 
